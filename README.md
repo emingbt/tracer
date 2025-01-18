@@ -1,0 +1,1 @@
+# 2dof-spherical-parallel-manipulator
