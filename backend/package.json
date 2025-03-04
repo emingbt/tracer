@@ -1,0 +1,20 @@
+{
+  "name": "arduino-gcode-sender",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "node --disable-warning=ExperimentalWarning --experimental-strip-types index.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "emingbt",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "fs": "^0.0.1-security",
+    "serialport": "^13.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.5"
+  }
+}
