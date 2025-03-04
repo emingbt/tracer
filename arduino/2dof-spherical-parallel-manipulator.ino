@@ -3,7 +3,7 @@
 #define STEP_Y 3
 #define DIR_Y 6
 
-const int stepsPerRevolution = 3200; // 1.8° per step with 1/16 microstepping
+const int stepsPerRevolution = 3200;                      // 1.8° per step with 1/16 microstepping
 const float degreesPerStep = 360.0 / stepsPerRevolution;  // Angle per step
 
 void setup() {
@@ -42,8 +42,10 @@ void moveSteppers(float angleX, float angleY) {
       stepY++;
     }
 
-    delayMicroseconds(200); // Adjust for smooth movement
+    delayMicroseconds(200);  // Adjust for smooth movement
   }
+
+  Serial.println("OK");
 }
 
 // Function to process G-code
@@ -61,29 +63,11 @@ void processGCode(String command) {
   }
 }
 
-// Example gcode that makes the circle movement
-// String gcodes[14] = {
-//   "G1 X30 Y0",         // Move to first point
-//   "G1 X-5 Y14",        // 30° step
-//   "G1 X-14 Y12",       // 60° step
-//   "G1 X-19 Y6",        // 90° step
-//   "G1 X-19 Y-6",       // 120° step
-//   "G1 X-14 Y-12",      // 150° step
-//   "G1 X-5 Y-14",       // 180° step
-//   "G1 X5 Y-14",        // 210° step
-//   "G1 X14 Y-12",       // 240° step
-//   "G1 X19 Y-6",        // 270° step
-//   "G1 X19 Y6",         // 300° step
-//   "G1 X14 Y12",        // 330° step
-//   "G1 X5 Y14",         // 360° step (back to starting point)
-//   "G1 X-30 Y0"         // Return to center
-// };
-
 void loop() {
   if (Serial.available()) {
-      String command = Serial.readStringUntil('\n');
-      command.trim();
-      Serial.println(command);
-      processGCode(command);
+    String command = Serial.readStringUntil('\n');
+    command.trim();
+    Serial.println(command);
+    processGCode(command);
   }
 }
