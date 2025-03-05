@@ -12,6 +12,10 @@ void setup() {
   pinMode(DIR_X, OUTPUT);
   pinMode(STEP_Y, OUTPUT);
   pinMode(DIR_Y, OUTPUT);
+
+  while (!Serial) {}  // Wait for serial connection (for boards like Leonardo)
+
+  Serial.println("READY");  // Indicate that Arduino is ready
 }
 
 // Function to move both steppers in parallel
@@ -28,21 +32,19 @@ void moveSteppers(float angleX, float angleY) {
   for (int i = 0; i < maxSteps; i++) {
     if (stepX < stepsX && (stepX * maxSteps) / stepsX <= i) {
       digitalWrite(STEP_X, HIGH);
-      delayMicroseconds(500);
+      delayMicroseconds(75);
       digitalWrite(STEP_X, LOW);
-      delayMicroseconds(500);
+      delayMicroseconds(75);
       stepX++;
     }
 
     if (stepY < stepsY && (stepY * maxSteps) / stepsY <= i) {
       digitalWrite(STEP_Y, HIGH);
-      delayMicroseconds(500);
+      delayMicroseconds(75);
       digitalWrite(STEP_Y, LOW);
-      delayMicroseconds(500);
+      delayMicroseconds(75);
       stepY++;
     }
-
-    delayMicroseconds(200);  // Adjust for smooth movement
   }
 
   Serial.println("OK");
@@ -67,7 +69,6 @@ void loop() {
   if (Serial.available()) {
     String command = Serial.readStringUntil('\n');
     command.trim();
-    Serial.println(command);
     processGCode(command);
   }
 }
