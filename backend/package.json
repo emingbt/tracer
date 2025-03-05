@@ -11,10 +11,12 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "express": "^4.21.2",
     "fs": "^0.0.1-security",
     "serialport": "^13.0.0"
   },
   "devDependencies": {
+    "@types/express": "^5.0.0",
     "@types/node": "^22.13.5"
   }
 }
