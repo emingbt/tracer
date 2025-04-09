@@ -81,7 +81,7 @@ export default function DrawingCanvas() {
 
     // Draw each point with a small delay
     for (let i = 1; i < points.length; i++) {
-      await new Promise(resolve => setTimeout(resolve, 100)) // 10ms delay between points
+      await new Promise(resolve => setTimeout(resolve, 10)) // 10ms delay between points
       ctx.lineTo(points[i][0], points[i][1])
       ctx.stroke()
     }
