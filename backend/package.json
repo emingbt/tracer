@@ -11,11 +11,14 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "cors": "^2.8.5",
     "express": "^4.21.2",
     "fs": "^0.0.1-security",
-    "serialport": "^13.0.0"
+    "serialport": "^13.0.0",
+    "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
     "@types/node": "^22.13.5"
   }
