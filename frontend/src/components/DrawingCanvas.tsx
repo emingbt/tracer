@@ -3,6 +3,8 @@
 import { useRef, useState } from "react"
 
 export default function DrawingCanvas() {
+  const canvasSize = 500
+
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const [drawing, setDrawing] = useState<boolean>(false)
   const [points, setPoints] = useState<[number, number][]>([])
@@ -192,6 +194,29 @@ export default function DrawingCanvas() {
     ctx.stroke()
   }
 
+  const sendDrawing = async () => {
+    if (points.length === 0) return
+
+    try {
+      const response = await fetch('http://localhost:8080/draw', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ points, canvasSize }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to send drawing')
+      }
+
+      const data = await response.json()
+      console.log('Drawing sent successfully:', data)
+    } catch (error) {
+      console.error('Error sending drawing:', error)
+    }
+  }
+
   return (
     <div className="flex flex-col items-center gap-4">
       <canvas
@@ -210,6 +235,12 @@ export default function DrawingCanvas() {
           className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
         >
           Simulate
+        </button>
+        <button
+          onClick={sendDrawing}
+          className="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600"
+        >
+          Send
         </button>
         <button
           onClick={clearDrawing}
