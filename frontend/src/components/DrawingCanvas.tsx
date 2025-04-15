@@ -1,13 +1,55 @@
 "use client"
 
-import { useRef, useState } from "react"
+import { useRef, useState, useEffect } from "react"
+import { Circle, Square, Triangle, Diamond, Play, Send, Trash2, Hexagon, Star } from "lucide-react"
+import * as shapes from "@/utils/shapes"
 
 export default function DrawingCanvas() {
-  const canvasSize = 500
-
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const [drawing, setDrawing] = useState<boolean>(false)
   const [points, setPoints] = useState<[number, number][]>([])
+
+  // Initialize canvas context
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+
+    const ctx = canvas.getContext("2d")
+    if (!ctx) return
+
+    // Set up drawing style
+    ctx.lineCap = "round"
+    ctx.lineJoin = "round"
+    ctx.lineWidth = 2
+    ctx.strokeStyle = "black"
+
+    // Draw grid pattern
+    const gridSize = 20
+    const gridColor = "rgba(0, 0, 0, 0.1)"
+
+    ctx.strokeStyle = gridColor
+    ctx.lineWidth = 1
+
+    // Draw vertical lines
+    for (let x = 0; x <= canvas.width; x += gridSize) {
+      ctx.beginPath()
+      ctx.moveTo(x, 0)
+      ctx.lineTo(x, canvas.height)
+      ctx.stroke()
+    }
+
+    // Draw horizontal lines
+    for (let y = 0; y <= canvas.height; y += gridSize) {
+      ctx.beginPath()
+      ctx.moveTo(0, y)
+      ctx.lineTo(canvas.width, y)
+      ctx.stroke()
+    }
+
+    // Reset drawing style
+    ctx.strokeStyle = "black"
+    ctx.lineWidth = 2
+  }, [])
 
   const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current
@@ -88,110 +130,9 @@ export default function DrawingCanvas() {
       ctx.stroke()
     }
 
-    console.log(points)
-
     // Reset the drawing style
     ctx.strokeStyle = "black"
-    ctx.lineWidth = 1
-  }
-
-  const drawCircle = () => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const ctx = canvas.getContext("2d")
-    if (!ctx) return
-
-    const centerX = canvas.width / 2
-    const centerY = canvas.height / 2
-    const radius = 100
-
-    // Clear previous points
-    setPoints([])
-
-    // Generate points for the circle
-    const circlePoints: [number, number][] = []
-    for (let i = 0; i <= 360; i++) {
-      const angle = (i * Math.PI) / 180
-      const x = centerX + radius * Math.cos(angle)
-      const y = centerY + radius * Math.sin(angle)
-      circlePoints.push([x, y])
-    }
-    setPoints(circlePoints)
-
-    // Draw the circle
-    ctx.beginPath()
-    ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI)
-    ctx.stroke()
-  }
-
-  const drawSquare = () => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const ctx = canvas.getContext("2d")
-    if (!ctx) return
-
-    const size = 200
-    const startX = (canvas.width - size) / 2
-    const startY = (canvas.height - size) / 2
-
-    // Clear previous points
-    setPoints([])
-
-    // Generate points for the square
-    const squarePoints: [number, number][] = [
-      [startX, startY],
-      [startX + size, startY],
-      [startX + size, startY + size],
-      [startX, startY + size],
-      [startX, startY] // Close the square
-    ]
-    setPoints(squarePoints)
-
-    // Draw the square
-    ctx.beginPath()
-    ctx.moveTo(startX, startY)
-    ctx.lineTo(startX + size, startY)
-    ctx.lineTo(startX + size, startY + size)
-    ctx.lineTo(startX, startY + size)
-    ctx.closePath()
-    ctx.stroke()
-  }
-
-  const drawStar = () => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const ctx = canvas.getContext("2d")
-    if (!ctx) return
-
-    const centerX = canvas.width / 2
-    const centerY = canvas.height / 2
-    const outerRadius = 100
-    const innerRadius = 40
-    const spikes = 5
-
-    // Clear previous points
-    setPoints([])
-
-    // Generate points for the star
-    const starPoints: [number, number][] = []
-    for (let i = 0; i <= spikes * 2; i++) {
-      const radius = i % 2 === 0 ? outerRadius : innerRadius
-      const angle = (i * Math.PI) / spikes
-      const x = centerX + radius * Math.sin(angle)
-      const y = centerY - radius * Math.cos(angle)
-      starPoints.push([x, y])
-    }
-    starPoints.push(starPoints[0]) // Close the star
-    setPoints(starPoints)
-
-    // Draw the star
-    ctx.beginPath()
-    ctx.moveTo(starPoints[0][0], starPoints[0][1])
-    for (let i = 1; i < starPoints.length; i++) {
-      ctx.lineTo(starPoints[i][0], starPoints[i][1])
-    }
-    ctx.closePath()
-    ctx.stroke()
+    ctx.lineWidth = 2
   }
 
   const sendDrawing = async () => {
@@ -203,7 +144,7 @@ export default function DrawingCanvas() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ points, canvasSize }),
+        body: JSON.stringify({ points, canvasSize: 500 }),
       })
 
       if (!response.ok) {
@@ -218,56 +159,103 @@ export default function DrawingCanvas() {
   }
 
   return (
-    <div className="flex flex-col items-center gap-4">
-      <canvas
-        ref={canvasRef}
-        width={500}
-        height={500}
-        style={{ border: "1px solid black" }}
-        onMouseDown={startDrawing}
-        onMouseMove={draw}
-        onMouseUp={stopDrawing}
-        onMouseOut={stopDrawing}
-      ></canvas>
-      <div className="flex flex-wrap gap-4 justify-center">
-        <button
-          onClick={replayDrawing}
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-        >
-          Simulate
-        </button>
-        <button
-          onClick={sendDrawing}
-          className="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600"
-        >
-          Send
-        </button>
-        <button
-          onClick={clearDrawing}
-          className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-        >
-          Clear
-        </button>
+    <div className="flex flex-col lg:flex-row gap-4 p-4 bg-gray-50 rounded-lg max-w-[1400px] mx-auto">
+      {/* Shapes Panel - Left Side */}
+      <div className="lg:w-48 order-3 lg:order-1">
+        <div className="h-full bg-gray-100 rounded-lg p-4">
+          <div className="text-gray-700 text-sm font-medium mb-4">Shapes</div>
+          <div className="grid grid-cols-2 lg:grid-cols-1 gap-2">
+            <button
+              onClick={() => shapes.drawCircle(canvasRef.current!, setPoints)}
+              className="flex items-center justify-center gap-2 bg-yellow-50 border border-yellow-400 text-yellow-600 hover:bg-yellow-100 py-2 px-4 rounded-md cursor-pointer transition-colors"
+            >
+              <Circle className="w-4 h-4" />
+              Circle
+            </button>
+            <button
+              onClick={() => shapes.drawSquare(canvasRef.current!, setPoints)}
+              className="flex items-center justify-center gap-2 bg-orange-50 border border-orange-400 text-orange-600 hover:bg-orange-100 py-2 px-4 rounded-md cursor-pointer transition-colors"
+            >
+              <Square className="w-4 h-4" />
+              Square
+            </button>
+            <button
+              onClick={() => shapes.drawTriangle(canvasRef.current!, setPoints)}
+              className="flex items-center justify-center gap-2 bg-pink-50 border border-pink-400 text-pink-600 hover:bg-pink-100 py-2 px-4 rounded-md cursor-pointer transition-colors"
+            >
+              <Triangle className="w-4 h-4" />
+              Triangle
+            </button>
+            <button
+              onClick={() => shapes.drawDiamond(canvasRef.current!, setPoints)}
+              className="flex items-center justify-center gap-2 bg-purple-50 border border-purple-400 text-purple-600 hover:bg-purple-100 py-2 px-4 rounded-md cursor-pointer transition-colors"
+            >
+              <Diamond className="w-4 h-4" />
+              Diamond
+            </button>
+            <button
+              onClick={() => shapes.drawHexagon(canvasRef.current!, setPoints)}
+              className="flex items-center justify-center gap-2 bg-green-50 border border-green-400 text-green-600 hover:bg-green-100 py-2 px-4 rounded-md cursor-pointer transition-colors"
+            >
+              <Hexagon className="w-4 h-4" />
+              Hexagon
+            </button>
+            <button
+              onClick={() => shapes.drawStar(canvasRef.current!, setPoints)}
+              className="flex items-center justify-center gap-2 bg-blue-50 border border-blue-400 text-blue-600 hover:bg-blue-100 py-2 px-4 rounded-md cursor-pointer transition-colors"
+            >
+              <Star className="w-4 h-4" />
+              Star
+            </button>
+          </div>
+        </div>
       </div>
-      <div className="flex flex-wrap gap-4 justify-center">
-        <button
-          onClick={drawCircle}
-          className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
-        >
-          Circle
-        </button>
-        <button
-          onClick={drawSquare}
-          className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
-        >
-          Square
-        </button>
-        <button
-          onClick={drawStar}
-          className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
-        >
-          Star
-        </button>
+
+      {/* Canvas - Center */}
+      <div className="order-1 lg:order-2 lg:flex-1">
+        <div className="bg-white rounded-lg overflow-hidden border border-gray-200 shadow-sm">
+          <canvas
+            ref={canvasRef}
+            width={500}
+            height={500}
+            className="w-full touch-none cursor-crosshair"
+            onMouseDown={startDrawing}
+            onMouseMove={draw}
+            onMouseUp={stopDrawing}
+            onMouseOut={stopDrawing}
+          />
+        </div>
+      </div>
+
+      {/* Actions Panel - Right Side */}
+      <div className="lg:w-48 order-2 lg:order-3">
+        <div className="h-full bg-gray-100 rounded-lg p-4">
+          <div className="text-gray-700 text-sm font-medium mb-2">Actions</div>
+          <div className="flex flex-row lg:flex-col gap-2">
+            <button
+              onClick={replayDrawing}
+              className="flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-md cursor-pointer transition-colors flex-1 lg:flex-none"
+            >
+              <Play className="w-4 h-4" />
+              Simulate
+            </button>
+            <button
+              onClick={clearDrawing}
+              className="flex items-center justify-center gap-2 bg-rose-500 hover:bg-rose-600 text-white py-2 px-4 rounded-md cursor-pointer transition-colors flex-1 lg:flex-none"
+            >
+              <Trash2 className="w-4 h-4" />
+              Clear
+            </button>
+            <div className="w-full h-[1px] bg-gray-300 my-1" />
+            <button
+              onClick={sendDrawing}
+              className="flex items-center justify-center gap-2 bg-gradient-to-r from-[#FFD700] via-[#FF1493] to-[#1E90FF] text-white py-2 px-4 rounded-md cursor-pointer transition-colors flex-1 lg:flex-none"
+            >
+              <Send className="w-4 h-4" />
+              Send
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   )
