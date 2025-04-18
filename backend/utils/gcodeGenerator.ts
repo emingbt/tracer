@@ -1,4 +1,4 @@
-export default function generateGcode(points: number[][], canvasSize: number) {
+export default function generateGcode(points: number[][], canvasSize: number, repeat: number = 1) {
   // Convert canvas coordinates to motor angles
   const convertToAngles = (x: number, y: number): [number, number] => {
     // Map from [0, canvasSize] to [-20, 20]
@@ -31,15 +31,17 @@ export default function generateGcode(points: number[][], canvasSize: number) {
   gcodeCommands.push(`G1 X${firstX.toFixed(1)} Y${firstY.toFixed(1)}`)
 
   // Generate relative movements for each subsequent point
-  for (let i = 1; i < anglePoints.length; i++) {
-    const [prevX, prevY] = anglePoints[i - 1]
-    const [currX, currY] = anglePoints[i]
+  for (let j = 1; j <= repeat; j++) {
+    for (let i = 1; i < anglePoints.length; i++) {
+      const [prevX, prevY] = anglePoints[i - 1]
+      const [currX, currY] = anglePoints[i]
 
-    // Calculate the difference between current and previous point
-    const diffX = currX - prevX
-    const diffY = currY - prevY
+      // Calculate the difference between current and previous point
+      const diffX = currX - prevX
+      const diffY = currY - prevY
 
-    gcodeCommands.push(`G1 X${diffX.toFixed(1)} Y${diffY.toFixed(1)}`)
+      gcodeCommands.push(`G1 X${diffX.toFixed(1)} Y${diffY.toFixed(1)}`)
+    }
   }
 
   // Add return to [0,0] from last point

@@ -8,6 +8,7 @@ export default function DrawingCanvas() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const [drawing, setDrawing] = useState<boolean>(false)
   const [points, setPoints] = useState<[number, number][]>([])
+  const [repeat, setRepeat] = useState<number>(1)
 
   // Initialize canvas context
   useEffect(() => {
@@ -144,7 +145,8 @@ export default function DrawingCanvas() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ points, canvasSize: 500 }),
+        cache: 'no-store',
+        body: JSON.stringify({ points, canvasSize: 500, repeat }),
       })
 
       if (!response.ok) {
@@ -231,29 +233,43 @@ export default function DrawingCanvas() {
       <div className="lg:w-48 order-2 lg:order-3">
         <div className="h-full bg-gray-100 rounded-lg p-4">
           <div className="text-gray-700 text-sm font-medium mb-2">Actions</div>
-          <div className="flex flex-row lg:flex-col gap-2">
-            <button
-              onClick={replayDrawing}
-              className="flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-md cursor-pointer transition-colors flex-1 lg:flex-none"
-            >
-              <Play className="w-4 h-4" />
-              Simulate
-            </button>
-            <button
-              onClick={clearDrawing}
-              className="flex items-center justify-center gap-2 bg-rose-500 hover:bg-rose-600 text-white py-2 px-4 rounded-md cursor-pointer transition-colors flex-1 lg:flex-none"
-            >
-              <Trash2 className="w-4 h-4" />
-              Clear
-            </button>
-            <div className="w-full h-[1px] bg-gray-300 my-1" />
-            <button
-              onClick={sendDrawing}
-              className="flex items-center justify-center gap-2 bg-gradient-to-r from-[#FFD700] via-[#FF1493] to-[#1E90FF] text-white py-2 px-4 rounded-md cursor-pointer transition-colors flex-1 lg:flex-none"
-            >
-              <Send className="w-4 h-4" />
-              Send
-            </button>
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2">
+              <label htmlFor="repeat" className="text-sm text-gray-600">Repeat:</label>
+              <input
+                type="number"
+                id="repeat"
+                min="1"
+                max="10"
+                value={repeat}
+                onChange={(e) => setRepeat(Math.max(1, Math.min(50, parseInt(e.target.value) || 1)))}
+                className="w-16 px-2 py-1 text-sm border rounded-md"
+              />
+            </div>
+            <div className="flex flex-row lg:flex-col gap-2">
+              <button
+                onClick={replayDrawing}
+                className="flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-md cursor-pointer transition-colors flex-1 lg:flex-none"
+              >
+                <Play className="w-4 h-4" />
+                Simulate
+              </button>
+              <button
+                onClick={clearDrawing}
+                className="flex items-center justify-center gap-2 bg-rose-500 hover:bg-rose-600 text-white py-2 px-4 rounded-md cursor-pointer transition-colors flex-1 lg:flex-none"
+              >
+                <Trash2 className="w-4 h-4" />
+                Clear
+              </button>
+              <div className="w-full h-[1px] bg-gray-300 my-1" />
+              <button
+                onClick={sendDrawing}
+                className="flex items-center justify-center gap-2 bg-gradient-to-r from-[#FFD700] via-[#FF1493] to-[#1E90FF] text-white py-2 px-4 rounded-md cursor-pointer transition-colors flex-1 lg:flex-none"
+              >
+                <Send className="w-4 h-4" />
+                Send
+              </button>
+            </div>
           </div>
         </div>
       </div>
