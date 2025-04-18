@@ -2,11 +2,11 @@ import { SerialPort } from "serialport"
 import { ReadlineParser } from "@serialport/parser-readline"
 import fs from "fs"
 
-type CommandFiles = "circle" | "cross" | "test" | "commands"
+type CommandFiles = "circle" | "cross" | "test" | "custom"
 
-export default function sendGcodeCommands(commandFile: CommandFiles) {
-  const SERIAL_PORT = "COM4" // Update if needed
-  const BAUD_RATE = 9600  // Update if needed
+export default function sendGcodeCommands(commandFile: CommandFiles, customCommands?: string[]) {
+  const SERIAL_PORT = "COM4"
+  const BAUD_RATE = 9600
   const FILE_PATH = `./commands/${commandFile}.txt`
 
   // Create SerialPort instance
@@ -14,9 +14,24 @@ export default function sendGcodeCommands(commandFile: CommandFiles) {
 
   // Create a parser to read lines
   const parser = port.pipe(new ReadlineParser({ delimiter: "\n" }))
+  let readCommands: string[] = []
 
   // Read commands from file
-  const readCommands = fs.readFileSync(FILE_PATH, "utf-8").split("\n").map(cmd => cmd.trim()).filter(cmd => cmd)
+  if (commandFile === "custom") {
+    if (!customCommands || customCommands.length === 0) {
+      console.error("❌ No custom commands provided.")
+      return
+    }
+    readCommands = customCommands.map(cmd => cmd.trim()).filter(cmd => cmd)
+  }
+  else if (!fs.existsSync(FILE_PATH)) {
+    console.error(`❌ Command file "${FILE_PATH}" does not exist.`)
+    return
+  }
+  else {
+    readCommands = fs.readFileSync(FILE_PATH, "utf-8").split("\n").map(cmd => cmd.trim()).filter(cmd => cmd)
+  }
+
   let commandQueue = readCommands
 
   let isArduinoReady = false
