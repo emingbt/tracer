@@ -240,7 +240,7 @@ export default function DrawingCanvas() {
                 type="number"
                 id="repeat"
                 min="1"
-                max="10"
+                max="50"
                 value={repeat}
                 onChange={(e) => setRepeat(Math.max(1, Math.min(50, parseInt(e.target.value) || 1)))}
                 className="w-16 px-2 py-1 text-sm border rounded-md"
