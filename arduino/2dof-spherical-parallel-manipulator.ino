@@ -3,8 +3,16 @@
 #define STEP_Y 3
 #define DIR_Y 6
 
+// Hall effect sensor pins
+#define HALL_X 4
+#define HALL_Y 7
+
 const int stepsPerRevolution = 3200;                      // 1.8° per step with 1/16 microstepping
 const float degreesPerStep = 360.0 / stepsPerRevolution;  // Angle per step
+
+// Calibration parameters
+const int X_STEPS_TO_HOME = 100;  // Steps to move to home position
+const int Y_STEPS_TO_HOME = 100;  // Steps to move to home position
 
 // Acceleration parameters
 const int MIN_DELAY = 100;   // Minimum delay (maximum speed)
@@ -26,9 +34,49 @@ void setup() {
   pinMode(STEP_Y, OUTPUT);
   pinMode(DIR_Y, OUTPUT);
 
+  pinMode(HALL_X, INPUT);  // Set Hall effect sensor pins as input with pull-up resistor
+  pinMode(HALL_Y, INPUT);
+
   while (!Serial) {}  // Wait for serial connection (for boards like Leonardo)
 
   Serial.println("READY");  // Indicate that Arduino is ready
+}
+
+void calibrate() {
+  // Move to each motor endstop and wait for the Hall effect sensor to trigger
+  digitalWrite(DIR_X, LOW);  // Move in negative direction
+  while (digitalRead(HALL_X) == HIGH) {
+    digitalWrite(STEP_X, HIGH);
+    delayMicroseconds(1000);  // Adjust delay for speed
+    digitalWrite(STEP_X, LOW);
+    delayMicroseconds(1000);
+  }
+  // Move to home position
+  digitalWrite(DIR_X, HIGH);  // Move in positive direction
+  for (int i = 0; i < X_STEPS_TO_HOME; i++) {
+    digitalWrite(STEP_X, HIGH);
+    delayMicroseconds(1000);  // Adjust delay for speed
+    digitalWrite(STEP_X, LOW);
+    delayMicroseconds(1000);
+  }
+
+  digitalWrite(DIR_Y, LOW);  // Move in negative direction
+  while (digitalRead(HALL_Y) == HIGH) {
+    digitalWrite(STEP_Y, HIGH);
+    delayMicroseconds(1000);  // Adjust delay for speed
+    digitalWrite(STEP_Y, LOW);
+    delayMicroseconds(1000);
+  }
+  // Move to home position
+  digitalWrite(DIR_Y, HIGH);  // Move in positive direction
+  for (int i = 0; i < Y_STEPS_TO_HOME; i++) {
+    digitalWrite(STEP_Y, HIGH);
+    delayMicroseconds(1000);  // Adjust delay for speed
+    digitalWrite(STEP_Y, LOW);
+    delayMicroseconds(1000);
+  }
+  
+  Serial.println("CALIBRATED");  // Indicate that calibration is complete
 }
 
 int calculateDelay(int currentStep, int totalSteps) {
