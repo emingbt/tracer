@@ -4,6 +4,10 @@ import fs from "fs"
 
 type CommandFiles = "circle" | "cross" | "test" | "custom"
 
+const BATCH_SIZE = 15 // Number of commands to send at once
+const BUFFER_SIZE = 20 // Match Arduino's buffer size
+const COMMAND_TIMEOUT = 5000 // Timeout for command acknowledgment in milliseconds
+
 export default function sendGcodeCommands(commandFile: CommandFiles, customCommands?: string[]) {
   const SERIAL_PORT = "COM4"
   const BAUD_RATE = 9600
@@ -15,6 +19,10 @@ export default function sendGcodeCommands(commandFile: CommandFiles, customComma
   // Create a parser to read lines
   const parser = port.pipe(new ReadlineParser({ delimiter: "\n" }))
   let readCommands: string[] = []
+  let commandQueue: string[] = []
+  let isArduinoReady = false
+  let commandsInFlight = 0
+  let lastCommandTime = Date.now()
 
   // Read commands from file
   if (commandFile === "custom") {
@@ -32,21 +40,41 @@ export default function sendGcodeCommands(commandFile: CommandFiles, customComma
     readCommands = fs.readFileSync(FILE_PATH, "utf-8").split("\n").map(cmd => cmd.trim()).filter(cmd => cmd)
   }
 
-  let commandQueue = readCommands
+  commandQueue = [...readCommands]
 
-  let isArduinoReady = false
-
-  function sendNextCommand() {
+  function sendNextBatch() {
     if (commandQueue.length === 0) {
-      console.log("✅ All commands sent!")
-      console.log(commandQueue)
-      port.close()
+      if (commandsInFlight === 0) {
+        console.log("✅ All commands sent and processed!")
+        port.close()
+      }
       return
     }
 
-    const command = commandQueue.shift()
-    console.log(`📤 Sending: ${command}`)
-    port.write(command + "\n")
+    // Calculate how many commands we can send in this batch
+    const availableBufferSpace = BUFFER_SIZE - commandsInFlight
+    const batchSize = Math.min(BATCH_SIZE, availableBufferSpace, commandQueue.length)
+
+    if (batchSize <= 0) {
+      // Check for timeout
+      if (Date.now() - lastCommandTime > COMMAND_TIMEOUT) {
+        console.error("⚠️ Command timeout - no response from Arduino")
+        port.close()
+        return
+      }
+      // Wait for some commands to be processed before sending more
+      return
+    }
+
+    // Send the batch of commands
+    const batch = commandQueue.splice(0, batchSize)
+    commandsInFlight += batch.length
+    lastCommandTime = Date.now()
+
+    console.log(`📤 Sending batch of ${batch.length} commands...`)
+    batch.forEach(command => {
+      port.write(command + "\n")
+    })
   }
 
   // Wait for Arduino to say "READY" before sending commands
@@ -55,11 +83,16 @@ export default function sendGcodeCommands(commandFile: CommandFiles, customComma
     console.log(`📥 Arduino: "${message}"`)
 
     if (message === "READY") {
-      console.log("🚀 Arduino is ready! Sending first command...")
+      console.log("🚀 Arduino is ready! Sending first batch...")
       isArduinoReady = true
-      sendNextCommand()
-    } else if (message === "OK" && isArduinoReady) {
-      sendNextCommand()
+      sendNextBatch()
+    } else if (message === "OK") {
+      commandsInFlight--
+      lastCommandTime = Date.now()
+      sendNextBatch()
+    } else if (message === "BUFFER_FULL") {
+      // Wait for some commands to be processed before sending more
+      console.log("⚠️ Arduino buffer is full, waiting for commands to be processed...")
     }
   })
 
