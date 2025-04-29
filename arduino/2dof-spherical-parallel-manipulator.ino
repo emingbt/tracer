@@ -6,6 +6,11 @@
 const int stepsPerRevolution = 3200;                      // 1.8° per step with 1/16 microstepping
 const float degreesPerStep = 360.0 / stepsPerRevolution;  // Angle per step
 
+// Acceleration parameters
+const int MIN_DELAY = 100;   // Minimum delay (maximum speed)
+const int MAX_DELAY = 2000;   // Maximum delay (minimum speed)
+const int ACCEL_STEPS = 60;  // Number of steps for acceleration/deceleration
+
 void setup() {
   Serial.begin(9600);
   pinMode(STEP_X, OUTPUT);
@@ -16,6 +21,21 @@ void setup() {
   while (!Serial) {}  // Wait for serial connection (for boards like Leonardo)
 
   Serial.println("READY");  // Indicate that Arduino is ready
+}
+
+int calculateDelay(int currentStep, int totalSteps) {
+  if (currentStep < ACCEL_STEPS) {
+    // Acceleration phase - quadratic curve
+    float progress = (float)currentStep / ACCEL_STEPS;
+    return MAX_DELAY - (MAX_DELAY - MIN_DELAY) * progress * progress;
+  } else if (currentStep > totalSteps - ACCEL_STEPS) {
+    // Deceleration phase - quadratic curve
+    float progress = (float)(totalSteps - currentStep) / ACCEL_STEPS;
+    return MAX_DELAY - (MAX_DELAY - MIN_DELAY) * progress * progress;
+  } else {
+    // Constant speed phase
+    return MIN_DELAY;
+  }
 }
 
 // Function to move both steppers in parallel
@@ -30,23 +50,26 @@ void moveSteppers(float angleX, float angleY) {
   int stepX = 0, stepY = 0;
 
   for (int i = 0; i < maxSteps; i++) {
+    int currentDelay = calculateDelay(i, maxSteps);
+
     if (stepX < stepsX && (stepX * maxSteps) / stepsX <= i) {
       digitalWrite(STEP_X, HIGH);
-      delayMicroseconds(75);
+      delayMicroseconds(currentDelay);
       digitalWrite(STEP_X, LOW);
-      delayMicroseconds(75);
+      delayMicroseconds(currentDelay);
       stepX++;
     }
 
     if (stepY < stepsY && (stepY * maxSteps) / stepsY <= i) {
       digitalWrite(STEP_Y, HIGH);
-      delayMicroseconds(75);
+      delayMicroseconds(currentDelay);
       digitalWrite(STEP_Y, LOW);
-      delayMicroseconds(75);
+      delayMicroseconds(currentDelay);
       stepY++;
     }
   }
 
+  Serial.println(maxSteps);
   Serial.println("OK");
 }
 
