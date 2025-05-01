@@ -3,21 +3,21 @@
 #define STEP_Y 3
 #define DIR_Y 6
 
+// Hall effect sensor pins
+#define HALL_X 4
+#define HALL_Y 7
+
 const int stepsPerRevolution = 3200;                      // 1.8° per step with 1/16 microstepping
 const float degreesPerStep = 360.0 / stepsPerRevolution;  // Angle per step
+
+// Calibration parameters
+const int X_STEPS_TO_HOME = 100;  // Steps to move to home position
+const int Y_STEPS_TO_HOME = 100;  // Steps to move to home position
 
 // Acceleration parameters
 const int MIN_DELAY = 100;   // Minimum delay (maximum speed)
 const int MAX_DELAY = 2000;   // Maximum delay (minimum speed)
 const int ACCEL_STEPS = 60;  // Number of steps for acceleration/deceleration
-
-// Command buffer settings
-const int BUFFER_SIZE = 20;  // Number of commands to buffer
-String commandBuffer[BUFFER_SIZE];
-int bufferHead = 0;  // Where to write new commands
-int bufferTail = 0;  // Where to read commands from
-bool isProcessing = false;
-int commandsInProcess = 0;  // Track number of commands being processed
 
 void setup() {
   Serial.begin(9600);
@@ -25,6 +25,9 @@ void setup() {
   pinMode(DIR_X, OUTPUT);
   pinMode(STEP_Y, OUTPUT);
   pinMode(DIR_Y, OUTPUT);
+
+  pinMode(HALL_X, INPUT);  // Set Hall effect sensor pins as input with pull-up resistor
+  pinMode(HALL_Y, INPUT);
 
   while (!Serial) {}  // Wait for serial connection (for boards like Leonardo)
 
@@ -77,32 +80,8 @@ void moveSteppers(float angleX, float angleY) {
     }
   }
 
-  // Send OK after movement is complete
-  commandsInProcess--;
-  if (commandsInProcess == 0) {
-    Serial.println("OK");
-  }
-}
-
-// Function to add command to buffer
-bool addToBuffer(String command) {
-  int nextHead = (bufferHead + 1) % BUFFER_SIZE;
-  if (nextHead == bufferTail) {
-    return false;  // Buffer is full
-  }
-  commandBuffer[bufferHead] = command;
-  bufferHead = nextHead;
-  return true;
-}
-
-// Function to get next command from buffer
-String getNextCommand() {
-  if (bufferHead == bufferTail) {
-    return "";  // Buffer is empty
-  }
-  String command = commandBuffer[bufferTail];
-  bufferTail = (bufferTail + 1) % BUFFER_SIZE;
-  return command;
+  Serial.println(maxSteps);
+  Serial.println("OK");
 }
 
 // Function to process G-code
@@ -116,27 +95,14 @@ void processGCode(String command) {
     if (xIndex != -1) xTarget = command.substring(xIndex + 1).toFloat();
     if (yIndex != -1) yTarget = command.substring(yIndex + 1).toFloat();
 
-    commandsInProcess++;
     moveSteppers(xTarget, yTarget);
   }
 }
 
 void loop() {
-  // Check for new commands
-  while (Serial.available()) {
+  if (Serial.available()) {
     String command = Serial.readStringUntil('\n');
     command.trim();
-    if (!addToBuffer(command)) {
-      Serial.println("BUFFER_FULL");  // Notify if buffer is full
-      break;
-    }
-  }
-
-  // Process commands from buffer if not already processing
-  if (!isProcessing && bufferHead != bufferTail) {
-    isProcessing = true;
-    String command = getNextCommand();
     processGCode(command);
-    isProcessing = false;
   }
 }
