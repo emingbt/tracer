@@ -3,6 +3,7 @@ import cors from "cors"
 import { z } from "zod"
 import sendGcodeCommands from "./utils/gcodeSender.ts"
 import generateGcode from "./utils/gcodeGenerator.ts"
+import calibrate from "./utils/calibrate.ts"
 
 const app = express()
 
@@ -25,6 +26,11 @@ app.get("/", (req, res) => {
   res.send("Hello World!")
 })
 
+app.get("/calibrate", (req, res) => {
+  res.send("Sending calibration command to Arduino")
+  calibrate()
+})
+
 app.get("/cross", (req, res) => {
   res.send("Sending cross commands to Arduino")
   sendGcodeCommands("cross")
@@ -33,6 +39,11 @@ app.get("/cross", (req, res) => {
 app.get("/circle", (req, res) => {
   res.send("Sending circle commands to Arduino")
   sendGcodeCommands("circle")
+})
+
+app.get("/square", (req, res) => {
+  res.send("Sending square commands to Arduino")
+  sendGcodeCommands("square")
 })
 
 app.get("/test", (req, res) => {
