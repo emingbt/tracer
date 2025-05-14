@@ -2,13 +2,17 @@
 
 import { useRef, useState, useEffect } from "react"
 import { Circle, Square, Triangle, Diamond, Play, Send, Trash2, Hexagon, Star } from "lucide-react"
+import pixelToCM from "@/utils/pixeltoCm"
 import * as shapes from "@/utils/shapes"
 
 export default function DrawingCanvas() {
+  const CANVAS_SIZE = 500
+
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const [drawing, setDrawing] = useState<boolean>(false)
   const [points, setPoints] = useState<[number, number][]>([])
   const [repeat, setRepeat] = useState<number>(1)
+  const [distance, setDistance] = useState<number>(200)
 
   // Initialize canvas context
   useEffect(() => {
@@ -139,6 +143,14 @@ export default function DrawingCanvas() {
   const sendDrawing = async () => {
     if (points.length === 0) return
 
+    const transformedPoints = points.map(point => {
+      const { cmX, cmY } = pixelToCM(point[0], point[1], CANVAS_SIZE, distance)
+      return [cmX, cmY]
+    })
+
+    // Send the drawing data to the server
+    console.log('Sending drawing data:', { transformedPoints, canvasSize: CANVAS_SIZE, distance, repeat })
+
     try {
       const response = await fetch('http://localhost:8080/draw', {
         method: 'POST',
@@ -146,7 +158,7 @@ export default function DrawingCanvas() {
           'Content-Type': 'application/json',
         },
         cache: 'no-store',
-        body: JSON.stringify({ points, canvasSize: 500, repeat }),
+        body: JSON.stringify({ points: transformedPoints, distance, repeat }),
       })
 
       if (!response.ok) {
@@ -218,8 +230,8 @@ export default function DrawingCanvas() {
         <div className="bg-white rounded-lg overflow-hidden border border-gray-200 shadow-sm">
           <canvas
             ref={canvasRef}
-            width={500}
-            height={500}
+            width={CANVAS_SIZE}
+            height={CANVAS_SIZE}
             className="w-full touch-none cursor-crosshair"
             onMouseDown={startDrawing}
             onMouseMove={draw}
@@ -234,6 +246,17 @@ export default function DrawingCanvas() {
         <div className="h-full bg-gray-100 rounded-lg p-4">
           <div className="text-gray-700 text-sm font-medium mb-2">Actions</div>
           <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2">
+              <label htmlFor="distance" className="text-sm text-gray-600">Distance (cm):</label>
+              <input
+                type="number"
+                id="distance"
+                min="1"
+                value={distance}
+                onChange={(e) => setDistance(parseInt(e.target.value) || 200)}
+                className="w-16 px-2 py-1 text-sm border rounded-md"
+              />
+            </div>
             <div className="flex items-center gap-2">
               <label htmlFor="repeat" className="text-sm text-gray-600">Repeat:</label>
               <input

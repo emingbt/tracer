@@ -19,6 +19,7 @@ const drawRequestSchema = z.object({
     z.tuple([z.number(), z.number()])
   ).min(1),
   canvasSize: z.number().positive(),
+  distance: z.number().positive().min(1),
   repeat: z.number().positive().max(50).optional()
 })
 
@@ -55,12 +56,12 @@ app.post("/draw", (req, res) => {
   try {
     // Validate request body
     const validatedData = drawRequestSchema.parse(req.body)
-    const { points, canvasSize, repeat } = validatedData
+    const { points, distance, repeat } = validatedData
 
-    const gcode = generateGcode(points, canvasSize, repeat).split("\n")
+    const gcode = generateGcode(points, distance, repeat).split("\n")
+    res.json({ message: "Points received successfully", points, gcode })
     sendGcodeCommands("custom", gcode)
 
-    res.json({ message: "Points received successfully", points, gcode })
   } catch (error) {
     if (error instanceof z.ZodError) {
       res.status(400).json({
