@@ -17,6 +17,8 @@ function calculateAngles(x, y, D) {
 }
 
 export default function generateGcode(points: number[][], distance: number, repeat: number = 1) {
+  let finishCoordinates = [0, 0]
+
   // Converts canvas coordinates to motor angles
   const convertToAngles = (x: number, y: number): [number, number] => {
     // motor1Angle controls X-axis rotation
@@ -46,7 +48,26 @@ export default function generateGcode(points: number[][], distance: number, repe
       const diffX = currX - prevX
       const diffY = currY - prevY
 
+      // On the finishing point, update the finish coordinates
+      if (i === anglePoints.length - 1) {
+        finishCoordinates = [currX, currY]
+      }
+
       gcodeCommands.push(`G1 X${diffX.toFixed(2)} Y${diffY.toFixed(2)}`)
+    }
+
+    // If there is a repeat, move back to the starting point
+    if (j < repeat) {
+      // Move back to the starting point
+      const [startX, startY] = anglePoints[0]
+
+      //Find the difference between current and starting point
+      const diffX = startX - finishCoordinates[0]
+      const diffY = startY - finishCoordinates[1]
+
+      if (diffX !== 0 || diffY !== 0) {
+        gcodeCommands.push(`G1 X${diffX.toFixed(2)} Y${diffY.toFixed(2)}`)
+      }
     }
   }
 

@@ -139,6 +139,10 @@ void loop() {
   if (Serial.available()) {
     String command = Serial.readStringUntil('\n');
     command.trim();
-    processGCode(command);
+    if (command == "CALIBRATE") {
+      calibrate();
+    } else {
+      processGCode(command);
+    }
   }
 }
