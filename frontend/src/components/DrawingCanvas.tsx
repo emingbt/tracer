@@ -149,8 +149,6 @@ export default function DrawingCanvas() {
     })
 
     // Send the drawing data to the server
-    console.log('Sending drawing data:', { transformedPoints, canvasSize: CANVAS_SIZE, distance, repeat })
-
     try {
       const response = await fetch('http://localhost:8080/draw', {
         method: 'POST',
