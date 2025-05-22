@@ -26,9 +26,20 @@ app.get("/", (req, res) => {
   res.send("Hello World!")
 })
 
-app.get("/calibrate", (req, res) => {
-  res.send("Sending calibration command to Arduino")
-  calibrate()
+app.get("/calibrate", async (req, res) => {
+  console.log("📥 Calibration request received")
+
+  try {
+    const isCalibrated = await calibrate()
+
+    if (isCalibrated) {
+      res.json({ success: true, message: "Calibration complete" })
+    } else {
+      res.status(500).json({ success: false, message: "Calibration failed or timed out" })
+    }
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Internal server error" })
+  }
 })
 
 app.get("/cross", (req, res) => {

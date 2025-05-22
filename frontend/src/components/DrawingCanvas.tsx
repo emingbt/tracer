@@ -1,7 +1,7 @@
 "use client"
 
 import { useRef, useState, useEffect } from "react"
-import { Circle, Square, Triangle, Diamond, Play, Send, Trash2, Hexagon, Star } from "lucide-react"
+import { Circle, Square, Triangle, Diamond, Play, Send, Trash2, Hexagon, Star, Crosshair } from "lucide-react"
 import pixelToCM from "@/utils/pixeltoCm"
 import * as shapes from "@/utils/shapes"
 
@@ -13,6 +13,7 @@ export default function DrawingCanvas() {
   const [points, setPoints] = useState<[number, number][]>([])
   const [repeat, setRepeat] = useState<number>(1)
   const [distance, setDistance] = useState<number>(200)
+  const [isCalibrating, setIsCalibrating] = useState<boolean>(false)
 
   // Initialize canvas context
   useEffect(() => {
@@ -170,6 +171,31 @@ export default function DrawingCanvas() {
     }
   }
 
+  const calibrate = async () => {
+    try {
+      setIsCalibrating(true)
+
+      const response = await fetch('http://localhost:8080/calibrate', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        cache: 'no-store',
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to send calibration command')
+      }
+
+      const data = await response.json()
+      console.log('Calibration command sent successfully:', data)
+    } catch (error) {
+      console.error('Error sending calibration command:', error)
+    } finally {
+      setIsCalibrating(false)
+    }
+  }
+
   return (
     <div className="flex flex-col lg:flex-row gap-4 p-4 bg-gray-50 rounded-lg max-w-[1400px] mx-auto">
       {/* Shapes Panel - Left Side */}
@@ -281,6 +307,14 @@ export default function DrawingCanvas() {
               >
                 <Trash2 className="w-4 h-4" />
                 Clear
+              </button>
+              <button
+                onClick={calibrate}
+                className={`flex items-center justify-center gap-2 ${isCalibrating ? "bg-gray-600 cursor-not-allowed" : "bg-lime-700 hover:bg-lime-800 cursor-pointer"} text-white py-2 px-4 rounded-md transition-colors flex-1 lg:flex-none`}
+                disabled={isCalibrating}
+              >
+                <Crosshair className="w-4 h-4" />
+                {isCalibrating ? "Calibrating..." : "Calibrate"}
               </button>
               <div className="w-full h-[1px] bg-gray-300 my-1" />
               <button
