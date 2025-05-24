@@ -5,7 +5,7 @@ import fs from "fs"
 type CommandFiles = "circle" | "cross" | "square" | "test" | "custom"
 
 export default function sendGcodeCommands(commandFile: CommandFiles, customCommands?: string[]) {
-  const SERIAL_PORT = "COM3"
+  const SERIAL_PORT = "COM5" // Agjust the serial port as needed
   const BAUD_RATE = 9600
   const FILE_PATH = `./commands/${commandFile}.txt`
 
