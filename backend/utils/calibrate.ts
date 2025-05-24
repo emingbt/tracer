@@ -2,7 +2,7 @@ import { SerialPort } from "serialport"
 import { ReadlineParser } from "@serialport/parser-readline"
 
 export default function calibrate(): Promise<boolean> {
-  const SERIAL_PORT = "COM3"
+  const SERIAL_PORT = "COM5" // Adjust the serial port as needed
   const BAUD_RATE = 9600
   const timeoutMs = 30000 // 30 seconds
 
